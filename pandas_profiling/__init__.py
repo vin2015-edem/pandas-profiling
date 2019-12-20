@@ -64,6 +64,34 @@ class ProfileReport(object):
         # Store column order
         config["column_order"] = df.columns.tolist()
 
+        # Determine indexes of two DataFrame  - for mode "CompareProfile"
+        if config["compare_profile_analysis"].get(bool):
+
+            global list0, list1
+            def get_index_dataframes(df: pd.DataFrame, feature_index: str) -> [list, list]:
+                """Get the index of the dataframe0 and dataframe1 - on condition "compare_profile_analysis" = True.
+
+                Args:
+                    df: input DataFrame which we want to split on two DataFrames
+                    feature_index: feature of an input DataFrame with indexes for split
+
+                Returns:
+                    The list of two list of the dataframe0 and dataframe1 - index0 and index1 respectively.
+                """
+                list0 = []
+                list1 = []
+                if config["compare_profile_analysis"].get(bool):
+                    if len(df['feature_index'].unique().tolist()) == 2:
+                        list0 = df[df['feature_index'] == df['feature_index'].unique().tolist()[0]].index.tolist()
+                        list1 = df[df['feature_index'] == df['feature_index'].unique().tolist()[1]].index.tolist()
+                    else:
+                        print("The feature", feature_index, "hasn't 2 different values")
+
+                return list0, list1
+
+            list0, list1 = get_index_dataframes(df, config["feature_index"].get(str))
+            print(list0[:5])
+
         # Get dataset statistics
         description_set = describe_df(df)
 

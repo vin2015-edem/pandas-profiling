@@ -22,6 +22,10 @@ vars:
           skewness_threshold: 20
     cat:
         check_composition: True
+# Compare profiling
+compare_profile_analysis: True
+feature_index: "Index"
+
 # Sort the variables. Possible values: ascending, descending or None (leaves original sorting)
 sort: ascending
 
