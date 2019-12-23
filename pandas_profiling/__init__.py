@@ -81,9 +81,9 @@ class ProfileReport(object):
                 list0 = []
                 list1 = []
                 if config["compare_profile_analysis"].get(bool):
-                    if len(df['feature_index'].unique().tolist()) == 2:
-                        list0 = df[df['feature_index'] == df['feature_index'].unique().tolist()[0]].index.tolist()
-                        list1 = df[df['feature_index'] == df['feature_index'].unique().tolist()[1]].index.tolist()
+                    if len(df[feature_index].unique().tolist()) == 2:
+                        list0 = df[df[feature_index] == df[feature_index].unique().tolist()[0]].index.tolist()
+                        list1 = df[df[feature_index] == df[feature_index].unique().tolist()[1]].index.tolist()
                     else:
                         print("The feature", feature_index, "hasn't 2 different values")
 
@@ -91,6 +91,7 @@ class ProfileReport(object):
 
             list0, list1 = get_index_dataframes(df, config["feature_index"].get(str))
             print(list0[:5])
+            print(list1[:5])
 
         # Get dataset statistics
         description_set = describe_df(df)
