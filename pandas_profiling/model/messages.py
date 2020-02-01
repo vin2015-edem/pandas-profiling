@@ -54,11 +54,16 @@ class Message(object):
     """A message object (type, values, column)."""
 
     def __init__(
-        self, message_type: MessageType, values: dict, column_name: str or None = None
+        self,
+        message_type: MessageType,
+        values: dict,
+        column_name: str or None = None,
+        df_name: str or None = None,
     ):
         self.message_type = message_type
         self.values = values
         self.column_name = column_name
+        self.df_name = df_name
 
 
 def check_table_messages(table: dict) -> List[Message]:

@@ -49,6 +49,56 @@ def describe_numeric_1d(series: pd.Series, series_description: dict) -> dict:
         https://github.com/astropy/astropy/issues/4927
     """
     quantiles = config["vars"]["num"]["quantiles"].get(list)
+    series1 = series.loc[list0]
+    series2 = series.loc[list1]
+
+    if config["compare_profile_analysis"].get(bool):
+        stats = {
+            "mean1": series1.mean(),
+            "mean2": series2.mean(),
+            "std1": series1.std(),
+            "std2": series2.std(),
+            "variance1": series1.var(),
+            "variance2": series2.var(),
+            "min1": series1.min(),
+            "min2": series2.min(),
+            "max1": series1.max(),
+            "max2": series2.max(),
+            "kurtosis1": series1.kurt(),
+            "kurtosis2": series2.kurt(),
+            "skewness1": series1.skew(),
+            "skewness2": series2.skew(),
+            "sum1": series1.sum(),
+            "sum2": series2.sum(),
+            "mad1": series1.mad(),
+            "mad2": series2.mad(),
+            "n_zeros1": (len(series1) - np.count_nonzero(series1)),
+            "n_zeros2": (len(series2) - np.count_nonzero(series2)),
+            "histogramdata1": series1,
+            "histogramdata2": series2,
+        }
+
+        stats["range1"] = stats["max1"] - stats["min1"]
+        stats["range2"] = stats["max2"] - stats["min2"]
+        stats.update(
+            {
+                "{:.0%.1}".format(percentile): value
+                for percentile, value in series1.quantile(quantiles).to_dict().items()
+            }
+        )
+
+        stats.update(
+            {
+                "{:.0%.2}".format(percentile): value
+                for percentile, value in series2.quantile(quantiles).to_dict().items()
+            }
+        )
+        stats["iqr1"] = stats["75%.1"] - stats["25%.2"]
+        stats["iqr2"] = stats["75%.1"] - stats["25%.2"]
+        stats["cv1"] = stats["std1"] / stats["mean1"] if stats["mean1"] else np.NaN
+        stats["cv2"] = stats["std2"] / stats["mean2"] if stats["mean2"] else np.NaN
+        stats["p_zeros1"] = float(stats["n_zeros1"]) / len(series)
+        stats["p_zeros2"] = float(stats["n_zeros2"]) / len(series)
 
     stats = {
         "mean": series.mean(),
@@ -232,6 +282,15 @@ def describe_boolean_1d(series: pd.Series, series_description: dict) -> dict:
     Returns:
         A dict containing calculated series description values.
     """
+    if config["compare_profile_analysis"].get(bool):
+        value_counts1 = series_description["value_counts_without_nan1"]
+        value_counts2 = series_description["value_counts_without_nan2"]
+
+        stats = {"top1": value_counts1.index[0],
+                 "top2": value_counts2.index[0],
+                 "freq1": value_counts1.iloc[0],
+                 "freq2": value_counts2.iloc[0]}
+
     value_counts = series_description["value_counts_without_nan"]
 
     stats = {"top": value_counts.index[0], "freq": value_counts.iloc[0]}
@@ -262,6 +321,9 @@ def describe_unique_1d(series: pd.Series, series_description: dict) -> dict:
     Returns:
         An empty dict.
     """
+    if config["compare_profile_analysis"].get(bool):
+        stats = {"date_warning1": warning_type_date(df1.loc[list0]),
+                 "date_warning2": warning_type_date(df2.loc[list1])}
     stats = {"date_warning": warning_type_date(series)}
 
     return stats
@@ -277,6 +339,7 @@ def describe_supported(series: pd.Series, series_description: dict) -> dict:
     Returns:
         A dict containing calculated series description values.
     """
+    global list0, list1
 
     # number of observations in the Series
     leng = len(series)
@@ -285,22 +348,69 @@ def describe_supported(series: pd.Series, series_description: dict) -> dict:
     count = series.count()
     # number of infinite observations in the Series
     n_infinite = count - series.count()
-
-    # TODO: check if we prefer without nan
     distinct_count = series_description["distinct_count_with_nan"]
 
-    stats = {
-        "count": count,
-        "distinct_count": distinct_count,
-        "p_missing": 1 - count * 1.0 / leng,
-        "n_missing": leng - count,
-        "p_infinite": n_infinite * 1.0 / leng,
-        "n_infinite": n_infinite,
-        "is_unique": distinct_count == leng,
-        "mode": series.mode().iloc[0] if count > distinct_count > 1 else series[0],
-        "p_unique": distinct_count * 1.0 / leng,
-        "memorysize": series.memory_usage(),
-    }
+    if config["compare_profile_analysis"].get(bool):
+        series1 = series.loc[list0]
+        series2 = series.loc[list1]
+        leng1 = len(series1)
+        leng2 = len(series2)
+        # TODO: fix infinite logic
+        # number of non-NaN observations in the Series
+        count1 = series1.count()
+        count2 = series2.count()
+        # number of infinite observations in the Series
+        n_infinite1 = count1 - series1.count()
+        n_infinite2 = count2 - series2.count()
+        # TODO: check if we prefer without nan
+        distinct_count1 = series_description["distinct_count_with_nan1"]
+        distinct_count2 = series_description["distinct_count_with_nan2"]
+
+        stats = {
+            "count": count,
+            "distinct_count": distinct_count,
+            "p_missing": 1 - count * 1.0 / leng,
+            "n_missing": leng - count,
+            "p_infinite": n_infinite * 1.0 / leng,
+            "n_infinite": n_infinite,
+            "is_unique": distinct_count == leng,
+            "mode": series.mode().iloc[0] if count > distinct_count > 1 else series[0],
+            "p_unique": distinct_count * 1.0 / leng,
+            "memorysize": series.memory_usage(),
+            "count1": count1,
+            "distinct_count1": distinct_count1,
+            "p_missing1": 1 - count1 * 1.0 / leng1,
+            "n_missing1": leng1 - count1,
+            "p_infinite1": n_infinite1 * 1.0 / leng1,
+            "n_infinite1": n_infinite1,
+            "is_unique1": distinct_count1 == leng1,
+            "mode1": series1.mode().iloc[0] if count1 > distinct_count1 > 1 else series1[0],
+            "p_unique1": distinct_count1 * 1.0 / leng1,
+            "memorysize1": series1.memory_usage(),
+            "count2": count2,
+            "distinct_count2": distinct_count2,
+            "p_missing2": 1 - count2 * 1.0 / leng2,
+            "n_missing2": leng2 - count2,
+            "p_infinite2": n_infinite2 * 1.0 / leng2,
+            "n_infinite2": n_infinite2,
+            "is_unique2": distinct_count2 == leng2,
+            "mode2": series2.mode().iloc[0] if count2 > distinct_count2 > 1 else series2[0],
+            "p_unique2": distinct_count2 * 1.0 / leng2,
+            "memorysize2": series2.memory_usage(),
+        }
+    else:
+        stats = {
+            "count": count,
+            "distinct_count": distinct_count,
+            "p_missing": 1 - count * 1.0 / leng,
+            "n_missing": leng - count,
+            "p_infinite": n_infinite * 1.0 / leng,
+            "n_infinite": n_infinite,
+            "is_unique": distinct_count == leng,
+            "mode": series.mode().iloc[0] if count > distinct_count > 1 else series[0],
+            "p_unique": distinct_count * 1.0 / leng,
+            "memorysize": series.memory_usage(),
+        }
 
     return stats
 
@@ -322,6 +432,7 @@ def describe_unsupported(series: pd.Series, series_description: dict):
     count = series.count()
     # number of infinte observations in the Series
     n_infinite = count - series.count()
+
 
     results_data = {
         "count": count,
@@ -402,6 +513,63 @@ def describe_table(df: pd.DataFrame, variable_stats: pd.DataFrame) -> dict:
     Returns:
         A dictionary that contains the table statistics.
     """
+    if config["compare_profile_analysis"].get(bool):
+        df1 = df[df.index.isin(list0)]
+        df2 = df[df.index.isin(list1)]
+        n1 = len(df1)
+        n2 = len(df2)
+        # TODO: deep=True?
+        memory_size1 = df1.memory_usage(index=True).sum()
+        record_size1 = float(memory_size1) / n1
+        memory_size2 = df2.memory_usage(index=True).sum()
+        record_size2 = float(memory_size2) / n2
+
+        table_stats = {
+            "n1": n1,
+            "n2": n2,
+            "nvar": len(df.columns),
+            "memsize1": memory_size1,
+            "memsize2": memory_size2,
+            "recordsize1": record_size1,
+            "recordsize2": record_size2,
+            "n_cells_missing1": variable_stats.loc["n_missing1"].sum(),
+            "n_cells_missing2": variable_stats.loc["n_missing2"].sum(),
+            "n_vars_with_missing1": sum((variable_stats.loc["n_missing1"] > 0).astype(int)),
+            "n_vars_all_missing1": sum((variable_stats.loc["n_missing1"] == n1).astype(int)),
+            "n_vars_with_missing2": sum((variable_stats.loc["n_missing2"] > 0).astype(int)),
+            "n_vars_all_missing2": sum((variable_stats.loc["n_missing2"] == n2).astype(int)),
+        }
+        table_stats["p_cells_missing1"] = table_stats["n_cells_missing1"] / (
+                table_stats["n1"] * table_stats["nvar"]
+        )
+        table_stats["p_cells_missing2"] = table_stats["n_cells_missing2"] / (
+            table_stats["n2"] * table_stats["nvar"]
+        )
+
+        supported_columns = variable_stats.transpose()[
+            variable_stats.transpose().type != Variable.S_TYPE_UNSUPPORTED
+            ].index.tolist()
+        table_stats["n_duplicates1"] = (
+            sum(df1.duplicated(subset=supported_columns))
+            if len(supported_columns) > 0
+            else 0
+        )
+        table_stats["n_duplicates2"] = (
+            sum(df2.duplicated(subset=supported_columns))
+            if len(supported_columns) > 0
+            else 0
+        )
+        table_stats["p_duplicates1"] = (
+            (table_stats["n_duplicates1"] / len(df1))
+            if (len(supported_columns) > 0 and len(df1) > 0)
+            else 0
+        )
+        table_stats["p_duplicates2"] = (
+            (table_stats["n_duplicates2"] / len(df2))
+            if (len(supported_columns) > 0 and len(df2) > 0)
+            else 0
+        )
+
     n = len(df)
     # TODO: deep=True?
     memory_size = df.memory_usage(index=True).sum()

@@ -24,7 +24,7 @@ vars:
         check_composition: True
 # Compare profiling
 compare_profile_analysis: True
-feature_index: "Index"
+feature_index: "split"
 
 # Sort the variables. Possible values: ascending, descending or None (leaves original sorting)
 sort: ascending
@@ -52,6 +52,7 @@ correlations:
 # For numeric
 check_correlation_pearson: True
 correlation_threshold_pearson: 0.9
+correlation_trim_mode: 'random' # or 'head', 'tail'
 
 # For categorical
 check_correlation_cramers: False

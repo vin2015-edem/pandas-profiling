@@ -141,7 +141,11 @@ def calculate_correlations(df: pd.DataFrame, variables: dict) -> dict:
     for correlation_name in ["pearson", "spearman", "kendall"]:
         if config["correlations"][correlation_name].get(bool):
             try:
-                correlation = df.corr(method=correlation_name)
+                if config["compare_profile_analysis"].get(bool):
+                    list0c, list1c = list_trim(list0, list1)
+                    correlation = df.loc[list0c].corrwith(df.loc[list1c], axis=0, drop=False, method=correlation_name)
+                else:
+                    correlation = df.corr(method=correlation_name)
                 if len(correlation) > 0:
                     correlations[correlation_name] = correlation
             except (ValueError, AssertionError) as e:

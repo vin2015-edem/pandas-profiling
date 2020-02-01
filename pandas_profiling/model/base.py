@@ -217,3 +217,28 @@ def get_var_type(series: pd.Series) -> dict:
     series_description.update({"type": var_type})
 
     return series_description
+
+def list_trim(list0, list1) -> list:
+    # Trims a longer list of line labels according to correlation_trim_mode from config
+    # Deletes the first (t='head'), last ('tail'), random ('random') values from the long list
+    dl = len(list0) - len(list1)
+    t = config["correlation_trim_mode"].get(str)
+    if dl > 0:
+        # len(list0) > len(list1)
+        if t == 'head':
+            list0 = list0[dl:]
+        elif t == 'tail':
+            list0 = list0[:(len(list1))]
+        elif t == 'random':
+            from random import sample
+            list0 = sample(list0,len(list1))
+    elif dl < 0:
+        # len(list0) < len(list1)
+        if t == 'head':
+            list1 = list1[dl:]
+        elif t == 'tail':
+            list1 = list1[:(len(list0))]
+        elif t == 'random':
+            from random import sample
+            list1 = sample(list1,len(list0))
+    return list0, list1

@@ -68,6 +68,9 @@ class ProfileReport(object):
         if config["compare_profile_analysis"].get(bool):
 
             global list0, list1
+            list0 = []
+            list1 = []
+
             def get_index_dataframes(df: pd.DataFrame, feature_index: str) -> [list, list]:
                 """Get the index of the dataframe0 and dataframe1 - on condition "compare_profile_analysis" = True.
 
@@ -78,8 +81,6 @@ class ProfileReport(object):
                 Returns:
                     The list of two list of the dataframe0 and dataframe1 - index0 and index1 respectively.
                 """
-                list0 = []
-                list1 = []
                 if config["compare_profile_analysis"].get(bool):
                     if len(df[feature_index].unique().tolist()) == 2:
                         list0 = df[df[feature_index] == df[feature_index].unique().tolist()[0]].index.tolist()
@@ -94,7 +95,7 @@ class ProfileReport(object):
             print(list1[:5])
 
         # Get dataset statistics
-        description_set = describe_df(df)
+        description_set = describe_df(df, )
 
         # Get sample
         sample = {}
